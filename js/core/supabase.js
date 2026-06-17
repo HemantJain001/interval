@@ -23,6 +23,12 @@ export function initSupabase() {
 
             supabase.auth.onAuthStateChange(async (event, session) => {
                 console.log('[Interval] Auth event:', event);
+
+                // INITIAL_SESSION is handled by loadStateAsync() on page load.
+                // Acting on it here causes a duplicate sync that races with
+                // DOMContentLoaded event listeners, freezing the page after refresh.
+                if (event === 'INITIAL_SESSION') return;
+
                 if (session) {
                     showApp();
                     updateUserMenu(session.user);
