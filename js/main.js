@@ -63,6 +63,12 @@ export function switchView(viewName) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+/**
+ * Loads authentication state and cloud/local data.
+ * Does NOT show the app or render — that is the caller's responsibility
+ * AFTER all event listeners have been registered, to prevent a frozen UI.
+ * Returns: 'authenticated' | 'bypass' | 'redirect'
+ */
 async function loadStateAsync() {
     initSupabase();
     const supabase = getSupabase();
@@ -72,9 +78,8 @@ async function loadStateAsync() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                // Authenticated — show UI immediately, then fetch cloud state
+                // Update user menu now so the avatar shows immediately when app reveals.
                 updateUserMenu(session.user);
-                showApp();
 
                 const cloudState = await fetchStateFromCloud();
                 if (cloudState) {
@@ -82,15 +87,13 @@ async function loadStateAsync() {
                     saveStateToLocal();
                     console.log('[Auth] State loaded from cloud.');
                 } else {
-                    // First time — seed cloud with current local data
+                    // First time — seed cloud with current local data.
                     loadStateFromLocal();
                     await saveStateToCloud();
                 }
 
                 updateCloudUI();
-                // Trigger one authoritative render after state is ready
-                renderDashboard();
-                return;
+                return 'authenticated';
             }
         } catch (err) {
             console.error('[Auth] Cloud load failed:', err);
@@ -100,12 +103,13 @@ async function loadStateAsync() {
     // Not authenticated
     updateUserMenu(null);
     updateCloudUI();
+
     if (isBypass) {
         loadStateFromLocal();
-        renderDashboard();
-    } else {
-        window.location.href = 'landing.html';
+        return 'bypass';
     }
+
+    return 'redirect';
 }
 
 const quickAddModal = document.getElementById('modalQuickAdd');
@@ -139,8 +143,17 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderDashboard();
     });
 
-    // Load state
-    await loadStateAsync();
+    // Load state — state is now ready but app is still hidden.
+    // Do NOT show the app or render here; do it after listeners are registered
+    // so there is zero window where the UI is visible but unresponsive.
+    const authResult = await loadStateAsync();
+
+    if (authResult === 'redirect') {
+        window.location.href = 'landing.html';
+        return; // stop all further setup
+    }
+
+    // ── Register ALL event listeners BEFORE revealing the app ────────────────
 
     // Current date format display
     const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -189,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (btnCancel1) btnCancel1.addEventListener('click', closeQuickAddModal);
     if (btnCancel2) btnCancel2.addEventListener('click', closeQuickAddModal);
-    
+
     if (btnSaveQuickAdd) {
         btnSaveQuickAdd.addEventListener('click', () => {
             const titleEl = document.getElementById('modalTopicTitle');
@@ -230,7 +243,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     if (todayPreset && (todayPreset.muscle || todayPreset.time)) {
                         if (todayPreset.muscle) muscleSelect.value = todayPreset.muscle;
                         if (todayPreset.time) timeInput.value = todayPreset.time;
-                        
+
                         setTimeout(() => {
                             const todayChip = document.querySelector(`.gym-preset-chip[data-day="${todayDayIndex}"]`);
                             if (todayChip) todayChip.classList.add('applied');
@@ -264,7 +277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const data = { muscle, duration, notes };
             saveHabitState(todayStr, 'gym', true, data);
-            
+
             const cardGym = document.getElementById('cardGymHabit');
             if (cardGym) cardGym.classList.remove('expanded');
             showToast('Gym workout logged successfully!');
@@ -327,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const key = DAY_KEYS[d];
                 const muscleEl = document.getElementById(`scheduleMuscle${key}`);
                 const timeEl = document.getElementById(`scheduleTime${key}`);
-                
+
                 if (muscleEl && timeEl) {
                     schedule[d] = {
                         muscle: muscleEl.value,
@@ -341,7 +354,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const originalText = btnSaveSchedule.textContent;
             btnSaveSchedule.textContent = 'Saved ✓';
             btnSaveSchedule.disabled = true;
-            
+
             setTimeout(() => {
                 btnSaveSchedule.textContent = originalText;
                 btnSaveSchedule.disabled = false;
@@ -358,11 +371,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const query = e.target.value.toLowerCase().trim();
             document.querySelectorAll('.striver-step-card').forEach(stepCard => {
                 let stepHasVisibleProblem = false;
-                
+
                 // Filter and expand substeps individually if they contain matches
                 stepCard.querySelectorAll('.striver-substep-wrap').forEach(subWrap => {
                     let subHasVisibleProblem = false;
-                    
+
                     subWrap.querySelectorAll('.striver-problem-row').forEach(row => {
                         const titleEl = row.querySelector('.striver-prob-title, .striver-prob-link');
                         const title = titleEl ? titleEl.textContent.toLowerCase() : '';
@@ -419,13 +432,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnPushCloud) btnPushCloud.addEventListener('click', pushToCloud);
     if (btnPullCloud) btnPullCloud.addEventListener('click', pullFromCloud);
 
-    // interval-state-synced is registered above, before loadStateAsync (see top of DOMContentLoaded).
+    // interval-state-synced registered above before loadStateAsync.
 
     document.addEventListener('interval-open-quick-add', (e) => {
         openQuickAddModal(e.detail.title);
     });
 
-    // Initialize View — switchView also calls renderDashboard for the first paint.
+    // ── All listeners registered. NOW reveal the app and render. ─────────────
+    // This guarantees zero gap between visibility and interactivity.
+    if (authResult === 'authenticated' || authResult === 'bypass') {
+        showApp();
+    }
+
+    // Single authoritative render — state loaded, listeners attached, app visible.
     switchView('dashboard');
 });
 
