@@ -19,7 +19,7 @@ import {
 import { getLocalDateString } from './utils/date.js';
 import { showToast } from './utils/toast.js';
 import { renderDashboard, setActiveBucketFilter, createRevisionCard } from './components/revision.js';
-import { renderStriverSheet } from './components/striver.js';
+import { renderStriverSheet, expandedSteps, expandedSubsteps } from './components/striver.js';
 import { initScheduleSettings, exportDatabase, importDatabase, resetDatabase } from './components/settings.js';
 import { saveHabitState, renderGymPresetStrip } from './components/habits.js';
 
@@ -343,18 +343,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     const searchInput = document.getElementById('striverSearchInput');
     if (searchInput) {
         searchInput.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
+            const query = e.target.value.toLowerCase().trim();
             document.querySelectorAll('.striver-step-card').forEach(stepCard => {
                 let stepHasVisibleProblem = false;
                 
-                stepCard.querySelectorAll('.striver-problem-row').forEach(row => {
-                    const titleEl = row.querySelector('.striver-prob-title, .striver-prob-link');
-                    const title = titleEl ? titleEl.textContent.toLowerCase() : '';
-                    if (title.includes(query)) {
-                        row.style.display = 'flex';
-                        stepHasVisibleProblem = true;
+                // Filter and expand substeps individually if they contain matches
+                stepCard.querySelectorAll('.striver-substep-wrap').forEach(subWrap => {
+                    let subHasVisibleProblem = false;
+                    
+                    subWrap.querySelectorAll('.striver-problem-row').forEach(row => {
+                        const titleEl = row.querySelector('.striver-prob-title, .striver-prob-link');
+                        const title = titleEl ? titleEl.textContent.toLowerCase() : '';
+                        if (title.includes(query)) {
+                            row.style.display = 'flex';
+                            subHasVisibleProblem = true;
+                            stepHasVisibleProblem = true;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    if (query && subHasVisibleProblem) {
+                        subWrap.classList.add('expanded');
+                    } else if (query && !subHasVisibleProblem) {
+                        subWrap.classList.remove('expanded');
                     } else {
-                        row.style.display = 'none';
+                        // Reset to default collapsed/expanded when search is cleared
+                        const stepIdx = parseInt(subWrap.getAttribute('data-step-idx'), 10);
+                        const subIdx = parseInt(subWrap.getAttribute('data-sub-idx'), 10);
+                        const key = `${stepIdx}-${subIdx}`;
+                        if (expandedSubsteps && expandedSubsteps.has(key)) {
+                            subWrap.classList.add('expanded');
+                        } else {
+                            subWrap.classList.remove('expanded');
+                        }
                     }
                 });
 
@@ -365,8 +387,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 } else if (query && !stepHasVisibleProblem) {
                     stepCard.style.display = 'none';
                 } else {
-                    // Reset to default collapsed and visible when search is cleared
-                    stepCard.classList.remove('expanded');
+                    // Reset to default collapsed/expanded and visible when search is cleared
+                    const stepIdx = parseInt(stepCard.id.replace('striver-step-', ''), 10);
+                    if (expandedSteps && expandedSteps.has(stepIdx)) {
+                        stepCard.classList.add('expanded');
+                    } else {
+                        stepCard.classList.remove('expanded');
+                    }
                     stepCard.style.display = 'block';
                     stepCard.querySelectorAll('.striver-problem-row').forEach(row => row.style.display = 'flex');
                 }

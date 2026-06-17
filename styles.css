@@ -73,20 +73,30 @@
 /* --- Light Theme Override --- */
 [data-theme="light"] {
     /* Premium Softer Light Theme Surfaces */
-    --bg-canvas: #f8fafc; /* very soft slate blue-grey canvas */
-    --bg-surface: #ffffff; /* crisp white cards */
-    --bg-sidebar: #f1f5f9; /* distinct muted sidebar background to anchor navigation */
-    --bg-hover: rgba(15, 23, 42, 0.04); /* soft hover highlight */
+    --bg-canvas: #f8fafc;
+    /* very soft slate blue-grey canvas */
+    --bg-surface: #ffffff;
+    /* crisp white cards */
+    --bg-sidebar: #f1f5f9;
+    /* distinct muted sidebar background to anchor navigation */
+    --bg-hover: rgba(15, 23, 42, 0.04);
+    /* soft hover highlight */
 
     /* Soft Charcoal Text (never use pure black, charcoal is much less harsh) */
-    --text-primary: #1e293b; /* slate 800 */
-    --text-secondary: #475569; /* slate 600 */
-    --text-muted: #64748b; /* slate 500 */
-    --text-dim: #94a3b8; /* slate 400 */
+    --text-primary: #1e293b;
+    /* slate 800 */
+    --text-secondary: #475569;
+    /* slate 600 */
+    --text-muted: #64748b;
+    /* slate 500 */
+    --text-dim: #94a3b8;
+    /* slate 400 */
 
     /* Delicate Soft Borders */
-    --border-color: #e2e8f0; /* slate 200 - clean and subtle */
-    --border-color-hover: #cbd5e1; /* slate 300 */
+    --border-color: #e2e8f0;
+    /* slate 200 - clean and subtle */
+    --border-color-hover: #cbd5e1;
+    /* slate 300 */
 
     /* Accent — refined indigo */
     --primary: #4f46e5;
@@ -114,17 +124,21 @@
     --diff-high-border: #fecaca;
 
     /* Modal overlay */
-    --modal-backdrop: rgba(15, 23, 42, 0.3); /* dark slate translucent overlay */
+    --modal-backdrop: rgba(15, 23, 42, 0.3);
+    /* dark slate translucent overlay */
     --modal-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
     /* Heatmap levels */
-    --heatmap-0: #f1f5f9; /* slate 100 */
+    --heatmap-0: #f1f5f9;
+    /* slate 100 */
     --heatmap-1: #a7f3d0;
     --heatmap-2: #059669;
 }
 
 /* --- Base Layout Resets --- */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -140,7 +154,10 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
-input, select, textarea, button {
+input,
+select,
+textarea,
+button {
     font-family: inherit;
     font-size: inherit;
     color: inherit;
@@ -1000,7 +1017,8 @@ input, select, textarea, button {
     /* 4 weeks x 7 days = 28 cells */
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: repeat(7, 1fr);
-    grid-auto-flow: column; /* Fill column by column */
+    grid-auto-flow: column;
+    /* Fill column by column */
     gap: 4px;
     height: 94px;
 }
@@ -1058,9 +1076,17 @@ input, select, textarea, button {
     border-radius: 2px;
 }
 
-.legend-cell.level-0 { background-color: var(--heatmap-0); }
-.legend-cell.level-1 { background-color: var(--heatmap-1); }
-.legend-cell.level-2 { background-color: var(--heatmap-2); }
+.legend-cell.level-0 {
+    background-color: var(--heatmap-0);
+}
+
+.legend-cell.level-1 {
+    background-color: var(--heatmap-1);
+}
+
+.legend-cell.level-2 {
+    background-color: var(--heatmap-2);
+}
 
 /* Tooltips styling for heatmap cells (HTML native titles used as simple backup, but let's make it look premium) */
 .heatmap-cell[data-tooltip]::before {
@@ -1183,19 +1209,19 @@ input, select, textarea, button {
     text-transform: uppercase;
 }
 
-.diff-btn-label input:checked + .diff-visual-low {
+.diff-btn-label input:checked+.diff-visual-low {
     background-color: var(--diff-low-bg);
     color: var(--diff-low-text);
     border-color: var(--success);
 }
 
-.diff-btn-label input:checked + .diff-visual-medium {
+.diff-btn-label input:checked+.diff-visual-medium {
     background-color: var(--diff-medium-bg);
     color: var(--diff-medium-text);
     border-color: var(--warning);
 }
 
-.diff-btn-label input:checked + .diff-visual-high {
+.diff-btn-label input:checked+.diff-visual-high {
     background-color: var(--diff-high-bg);
     color: var(--diff-high-text);
     border-color: var(--danger);
@@ -1251,10 +1277,62 @@ input, select, textarea, button {
     display: block;
 }
 
-.striver-problems-list {
+.striver-substep-wrap {
+    margin-top: 14px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+}
+
+.striver-substep-wrap:first-child {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 4px;
+}
+
+.striver-substep-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding: 6px 0;
+    user-select: none;
+    transition: var(--transition-fast);
+}
+
+.striver-substep-header:hover .striver-substep-title {
+    color: var(--primary);
+}
+
+.striver-substep-header:hover .substep-chevron {
+    color: var(--primary);
+}
+
+.striver-substep-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: color var(--transition-fast);
+}
+
+.substep-chevron {
+    color: var(--text-muted);
+    transition: transform var(--transition-fast), color var(--transition-fast);
+}
+
+.striver-substep-wrap.expanded .substep-chevron {
+    transform: rotate(180deg);
+}
+
+.striver-substep-wrap .striver-problems-list {
+    display: none;
+}
+
+.striver-substep-wrap.expanded .striver-problems-list {
     display: flex;
     flex-direction: column;
     gap: 10px;
+    margin-top: 10px;
+    animation: slideDownFade 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 
 .striver-problem-row {
@@ -1325,7 +1403,8 @@ input, select, textarea, button {
     gap: 12px;
 }
 
-.striver-btn-video, .striver-btn-log {
+.striver-btn-video,
+.striver-btn-log {
     background: none;
     border: none;
     cursor: pointer;
@@ -1336,7 +1415,8 @@ input, select, textarea, button {
 }
 
 .striver-btn-video:hover {
-    color: #ef4444; /* YouTube Red */
+    color: #ef4444;
+    /* YouTube Red */
 }
 
 .striver-btn-log:hover {
@@ -1450,9 +1530,17 @@ input, select, textarea, button {
     animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.toast.toast-success { border-top-color: var(--success); }
-.toast.toast-warning { border-top-color: var(--warning); }
-.toast.toast-danger { border-top-color: var(--danger); }
+.toast.toast-success {
+    border-top-color: var(--success);
+}
+
+.toast.toast-warning {
+    border-top-color: var(--warning);
+}
+
+.toast.toast-danger {
+    border-top-color: var(--danger);
+}
 
 .toast-msg {
     font-size: 13px;
@@ -1467,6 +1555,7 @@ input, select, textarea, button {
         opacity: 0;
         transform: translateY(-8px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -1478,6 +1567,7 @@ input, select, textarea, button {
         opacity: 0;
         transform: scale(0.96);
     }
+
     to {
         opacity: 1;
         transform: scale(1);
@@ -1489,6 +1579,7 @@ input, select, textarea, button {
         opacity: 0;
         transform: translateY(16px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -1508,9 +1599,11 @@ input, select, textarea, button {
         transform: translateX(-100%);
         transition: transform var(--transition-standard);
     }
+
     .sidebar.open {
         transform: translateX(0);
     }
+
     .main-content {
         margin-left: 0;
     }
@@ -1620,8 +1713,15 @@ input, select, textarea, button {
 }
 
 @keyframes authCardEntrance {
-    from { opacity: 0; transform: translateY(24px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0)  scale(1); }
+    from {
+        opacity: 0;
+        transform: translateY(24px) scale(0.97);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .auth-gate-logo {
@@ -1675,13 +1775,13 @@ input, select, textarea, button {
     padding: 13px 24px;
     font-size: 15px;
     border-radius: 10px;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
     transition: var(--transition-fast);
 }
 
 .auth-google-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 24px rgba(0,0,0,0.35);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
 }
 
 .auth-gate-loading {
@@ -1704,7 +1804,9 @@ input, select, textarea, button {
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .auth-gate-note {
@@ -1742,8 +1844,13 @@ input, select, textarea, button {
 }
 
 @keyframes blobDrift {
-    from { transform: translate(0, 0) scale(1); }
-    to   { transform: translate(30px, 20px) scale(1.08); }
+    from {
+        transform: translate(0, 0) scale(1);
+    }
+
+    to {
+        transform: translate(30px, 20px) scale(1.08);
+    }
 }
 
 /* --- Theme Toggle Button --- */
@@ -1768,11 +1875,21 @@ input, select, textarea, button {
     color: var(--primary);
 }
 
-.btn-theme-toggle .icon-moon { display: block; }
-.btn-theme-toggle .icon-sun  { display: none; }
+.btn-theme-toggle .icon-moon {
+    display: block;
+}
 
-[data-theme="light"] .btn-theme-toggle .icon-moon { display: none; }
-[data-theme="light"] .btn-theme-toggle .icon-sun  { display: block; }
+.btn-theme-toggle .icon-sun {
+    display: none;
+}
+
+[data-theme="light"] .btn-theme-toggle .icon-moon {
+    display: none;
+}
+
+[data-theme="light"] .btn-theme-toggle .icon-sun {
+    display: block;
+}
 
 /* Light mode form control */
 [data-theme="light"] .form-control {
@@ -1788,6 +1905,7 @@ input, select, textarea, button {
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
+
     .auth-bg-blob,
     .auth-spinner,
     .revision-card,
@@ -1963,6 +2081,7 @@ input, select, textarea, button {
         align-items: stretch;
         gap: 8px;
     }
+
     .schedule-day-label {
         min-width: unset;
     }
