@@ -3,18 +3,18 @@
    ========================================================================== */
 
 import { state, loadStateFromLocal, saveStateToLocal, updateState } from './core/state.js';
-import { 
-    initSupabase, 
-    fetchStateFromCloud, 
-    saveStateToCloud, 
-    updateCloudUI, 
-    updateUserMenu, 
-    showApp, 
-    showAuthGate, 
+import {
+    initSupabase,
+    getSupabase,
+    fetchStateFromCloud,
+    saveStateToCloud,
+    updateCloudUI,
+    updateUserMenu,
+    showApp,
+    showAuthGate,
     saveState,
     pushToCloud,
     pullFromCloud,
-    supabase
 } from './core/supabase.js';
 import { getLocalDateString } from './utils/date.js';
 import { showToast } from './utils/toast.js';
@@ -65,38 +65,41 @@ export function switchView(viewName) {
 
 async function loadStateAsync() {
     initSupabase();
-
+    const supabase = getSupabase();
     const isBypass = new URLSearchParams(window.location.search).has('bypass');
 
     if (supabase) {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                // Authenticated — update UI immediately before network request
+                // Authenticated — show UI immediately, then fetch cloud state
                 updateUserMenu(session.user);
-                
+                showApp();
+
                 const cloudState = await fetchStateFromCloud();
                 if (cloudState) {
                     updateState(cloudState);
                     saveStateToLocal();
-                    console.log('[Interval] State loaded from cloud.');
+                    console.log('[Auth] State loaded from cloud.');
                 } else {
-                    // First time — seed cloud with local data
+                    // First time — seed cloud with current local data
                     loadStateFromLocal();
                     await saveStateToCloud();
                 }
+
                 updateCloudUI();
-                updateUserMenu(session.user);
-                showApp();
+                // Trigger one authoritative render after state is ready
+                renderDashboard();
                 return;
             }
         } catch (err) {
-            console.error('[Interval] Cloud load failed:', err);
+            console.error('[Auth] Cloud load failed:', err);
         }
     }
 
     // Not authenticated
     updateUserMenu(null);
+    updateCloudUI();
     if (isBypass) {
         loadStateFromLocal();
         renderDashboard();
@@ -128,6 +131,13 @@ export function closeQuickAddModal() {
 
 document.addEventListener('DOMContentLoaded', async () => {
     initUserMenu();
+
+    // Register state-sync listener BEFORE loadStateAsync so OAuth-redirect
+    // SIGNED_IN events (which call syncFromCloud → dispatch interval-state-synced)
+    // are never silently dropped if they fire during the await below.
+    document.addEventListener('interval-state-synced', () => {
+        renderDashboard();
+    });
 
     // Load state
     await loadStateAsync();
@@ -409,16 +419,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (btnPushCloud) btnPushCloud.addEventListener('click', pushToCloud);
     if (btnPullCloud) btnPullCloud.addEventListener('click', pullFromCloud);
 
-    // Custom events
-    document.addEventListener('interval-state-synced', () => {
-        renderDashboard();
-    });
+    // interval-state-synced is registered above, before loadStateAsync (see top of DOMContentLoaded).
 
     document.addEventListener('interval-open-quick-add', (e) => {
         openQuickAddModal(e.detail.title);
     });
 
-    // Initialize View
+    // Initialize View — switchView also calls renderDashboard for the first paint.
     switchView('dashboard');
 });
 
