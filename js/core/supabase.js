@@ -25,10 +25,10 @@ export function initSupabase() {
                 console.log('[Interval] Auth event:', event);
                 if (session) {
                     showApp();
-                    await syncFromCloud(true);
-                    document.dispatchEvent(new CustomEvent('interval-state-synced'));
                     updateUserMenu(session.user);
                     updateCloudUI();
+                    await syncFromCloud(true);
+                    document.dispatchEvent(new CustomEvent('interval-state-synced'));
                 } else {
                     updateUserMenu(null);
                     if (!new URLSearchParams(window.location.search).has('bypass')) {

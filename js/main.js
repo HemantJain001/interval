@@ -72,7 +72,9 @@ async function loadStateAsync() {
         try {
             const { data: { session } } = await supabase.auth.getSession();
             if (session?.user) {
-                // Authenticated — load cloud state and show app
+                // Authenticated — update UI immediately before network request
+                updateUserMenu(session.user);
+                
                 const cloudState = await fetchStateFromCloud();
                 if (cloudState) {
                     updateState(cloudState);
