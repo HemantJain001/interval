@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Apply theme before first paint to prevent flash -->
+    <script>
+        (function() {
+            var saved = localStorage.getItem('interval-theme');
+            if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        })();
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interval - Spaced Repetition & Habit Tracker</title>
+    <!-- Google Fonts: Playfair Display for editorial headers, Inter for clean body -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Main App (hidden until authenticated) -->
+    <div class="app-container" id="appContainer">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <svg class="logo-icon" viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    <span class="logo-text">Interval</span>
+                </div>
+            </div>
+            
+            <nav class="sidebar-menu">
+                <button class="menu-item active" data-view="dashboard" id="btnNavDashboard">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                        <rect x="3" y="3" width="7" height="9"></rect>
+                        <rect x="14" y="3" width="7" height="5"></rect>
+                        <rect x="14" y="12" width="7" height="9"></rect>
+                        <rect x="3" y="16" width="7" height="5"></rect>
+                    </svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="menu-item" data-view="striver" id="btnNavStriver">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                        <path d="M18 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"></path>
+                        <path d="M8 7h8M8 11h8M8 15h5"></path>
+                    </svg>
+                    <span>Striver DSA Sheet</span>
+                </button>
+                <button class="menu-item" data-view="settings" id="btnNavSettings">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    <span>Settings</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="streak-mini">
+                    <svg class="streak-icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M12 2C9.5 6.5 12 9.5 12 11.5C12 12.5 11.3 13.3 10.3 13.3C9.3 13.3 8.7 12.5 8.7 11.5C8.7 8.5 6 7 6 7C4.5 9.5 4 12.2 4 14C4 18.4 7.6 22 12 22C16.4 22 20 18.4 20 14C20 9.8 16 4 12 2Z"></path>
+                    </svg>
+                    <div class="streak-info">
+                        <span class="streak-val" id="sidebarStreakVal">0</span>
+                        <span class="streak-lbl">Day Streak</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="content-header">
+                <div class="header-left">
+                    <h1 class="view-title" id="currentViewTitle">Dashboard</h1>
+                </div>
+                <div class="header-right">
+                    <div class="date-badge">
+                        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        <span id="currentDateString">June 17, 2026</span>
+                    </div>
+
+                    <!-- Theme Toggle -->
+                    <button class="btn-theme-toggle" id="btnThemeToggle" aria-label="Toggle theme" title="Toggle light / dark mode">
+                        <!-- Moon icon: shown in dark mode -->
+                        <svg class="icon-moon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"></path>
+                        </svg>
+                        <!-- Sun icon: shown in light mode -->
+                        <svg class="icon-sun" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="5"></circle>
+                            <line x1="12" y1="1" x2="12" y2="3"></line>
+                            <line x1="12" y1="21" x2="12" y2="23"></line>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                            <line x1="1" y1="12" x2="3" y2="12"></line>
+                            <line x1="21" y1="12" x2="23" y2="12"></line>
+                            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                        </svg>
+                    </button>
+
+                    <!-- User Avatar + Dropdown -->
+                    <div class="user-menu" id="userMenu">
+                        <button class="user-avatar-btn" id="userAvatarBtn" aria-label="Account menu" aria-expanded="false">
+                            <span class="user-avatar-initials" id="userAvatarInitials">?</span>
+                        </button>
+                        <div class="user-dropdown" id="userDropdown" role="menu">
+                            <div class="user-dropdown-header">
+                                <div class="user-dropdown-avatar" id="userDropdownAvatar">?</div>
+                                <div class="user-dropdown-info">
+                                    <span class="user-dropdown-name" id="userDropdownName">Not signed in</span>
+                                    <span class="user-dropdown-email" id="userDropdownEmail">Not signed in</span>
+                                </div>
+                            </div>
+                            <div class="user-dropdown-divider"></div>
+                            <button class="user-dropdown-item user-dropdown-signout" id="btnHeaderSignOut" onclick="window.signOutUser()">
+                                <svg viewBox="0 0 24 24" width="15" height="15" stroke="currentColor" stroke-width="2" fill="none">
+                                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                    <polyline points="16 17 21 12 16 7"></polyline>
+                                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                                </svg>
+                                Sign Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="view-container">
+                <!-- VIEW: Dashboard -->
+                <section class="view-section active" id="view-dashboard">
+                    <div class="dashboard-grid">
+                        
+                        <!-- Left Column: Spaced Repetition Workload -->
+                        <div class="dashboard-col" id="colRevision">
+                            <div class="col-header-row">
+                                <h2 class="section-title">Spaced Repetition</h2>
+                                <button class="btn-action-add" id="btnQuickAddCard" title="Add custom revision card">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    <span>Add Topic</span>
+                                </button>
+                            </div>
+
+                            <!-- Interval Buckets Filter Selector -->
+                            <div class="bucket-filter-bar">
+                                <button class="bucket-tab active" data-bucket="today" id="tabBucketToday">
+                                    <span class="bucket-tab-name">Today</span>
+                                    <span class="bucket-badge" id="badgeCountToday">0</span>
+                                </button>
+                                <button class="bucket-tab" data-bucket="tomorrow" id="tabBucketTomorrow">
+                                    <span class="bucket-tab-name">Tomorrow</span>
+                                    <span class="bucket-badge" id="badgeCountTomorrow">0</span>
+                                </button>
+                                <button class="bucket-tab" data-bucket="week" id="tabBucketWeek">
+                                    <span class="bucket-tab-name">This Week</span>
+                                    <span class="bucket-badge" id="badgeCountWeek">0</span>
+                                </button>
+                                <button class="bucket-tab" data-bucket="later" id="tabBucketLater">
+                                    <span class="bucket-tab-name">Future</span>
+                                    <span class="bucket-badge" id="badgeCountLater">0</span>
+                                </button>
+                            </div>
+
+                            <!-- Revision Cards Container -->
+                            <div class="revision-cards-list" id="revisionCardsList">
+                                <!-- Populated dynamically by app.js -->
+                                <div class="empty-state" id="revisionEmptyState">
+                                    <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" class="empty-icon">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    <h3 class="empty-title">Your desk is clear!</h3>
+                                    <p class="empty-desc">No cards scheduled in this bucket. Go to the Striver DSA sheet or add a custom card to begin.</p>
+                                    <button class="btn btn-primary" id="btnEmptyStateGoStriver">Browse Striver Sheet</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Habits Tracker & Timeline -->
+                        <div class="dashboard-col" id="colHabits">
+                            <h2 class="section-title">Daily Habits</h2>
+
+                            <!-- Gym Tracker Accordion Card -->
+                            <div class="habit-accordion card" id="cardGymHabit">
+                                <button class="habit-accordion-header" id="btnToggleGym">
+                                    <div class="habit-header-left">
+                                        <span class="habit-emoji">🏋️</span>
+                                        <div class="habit-header-texts">
+                                            <h3 class="habit-title">Gym Tracker</h3>
+                                            <p class="habit-subtitle" id="gymStatusSubtitle">Log target muscles & performance</p>
+                                        </div>
+                                    </div>
+                                    <div class="habit-header-right">
+                                        <span class="habit-checkbox-visual" id="chkGymVisual"></span>
+                                        <svg class="chevron-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                </button>
+                                <div class="habit-accordion-content" id="gymAccordionContent">
+                                    <div class="gym-preset-strip" id="gymPresetStrip"></div>
+                                    <p class="schedule-first-run-hint" id="gymPresetHint" style="display:none;">
+                                        Tap a chip to apply a preset, or set up your schedule in Settings.
+                                    </p>
+                                    <div class="habit-form-group">
+                                        <label for="gymMuscle" class="habit-label">Muscle Focus</label>
+                                        <select id="gymMuscle" class="form-control">
+                                            <option value="Push">Push (Chest / Shoulders / Triceps)</option>
+                                            <option value="Pull">Pull (Back / Biceps)</option>
+                                            <option value="Legs">Legs / Core</option>
+                                            <option value="Cardio">Cardio / Endurance</option>
+                                            <option value="Rest">Rest / Recovery</option>
+                                        </select>
+                                    </div>
+                                    <div class="habit-form-group">
+                                        <label for="gymTime" class="habit-label">Workout Duration</label>
+                                        <input type="text" id="gymTime" class="form-control" placeholder="e.g. 60 mins, 5 AM - 6:30 AM">
+                                    </div>
+                                    <div class="habit-form-group">
+                                        <label for="gymNotes" class="habit-label">Performance Notes</label>
+                                        <textarea id="gymNotes" class="form-control" rows="2" placeholder="e.g. Hit squat PR, felt energetic..."></textarea>
+                                    </div>
+                                    <button class="btn btn-primary btn-block" id="btnSaveGym">Log Gym Workout</button>
+                                </div>
+                            </div>
+
+                            <!-- Communication Tracker Accordion Card -->
+                            <div class="habit-accordion card" id="cardCommHabit">
+                                <button class="habit-accordion-header" id="btnToggleComm">
+                                    <div class="habit-header-left">
+                                        <span class="habit-emoji">🗣️</span>
+                                        <div class="habit-header-texts">
+                                            <h3 class="habit-title">Communication</h3>
+                                            <p class="habit-subtitle" id="commStatusSubtitle">Log practice details & video URLs</p>
+                                        </div>
+                                    </div>
+                                    <div class="habit-header-right">
+                                        <span class="habit-checkbox-visual" id="chkCommVisual"></span>
+                                        <svg class="chevron-icon" viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none">
+                                            <polyline points="6 9 12 15 18 9"></polyline>
+                                        </svg>
+                                    </div>
+                                </button>
+                                <div class="habit-accordion-content" id="commAccordionContent">
+                                    <div class="habit-form-group">
+                                        <label for="commTopic" class="habit-label">Topic / Content Practiced</label>
+                                        <input type="text" id="commTopic" class="form-control" placeholder="e.g. Speech practice, mock presentation...">
+                                    </div>
+                                    <div class="habit-form-group">
+                                        <label for="commVideoUrl" class="habit-label">Instagram / Practice Video URL</label>
+                                        <input type="url" id="commVideoUrl" class="form-control" placeholder="https://instagram.com/reels/... or practice link">
+                                    </div>
+                                    <button class="btn btn-primary btn-block" id="btnSaveComm">Log Practice</button>
+                                </div>
+                            </div>
+
+                            <!-- Weekly Habits Consistency Timeline (GitHub-Style Grid) -->
+                            <div class="timeline-card card">
+                                <h3 class="timeline-title">Habits Consistency</h3>
+                                <p class="timeline-subtitle">Daily completion over the past 4 weeks (28 days)</p>
+                                
+                                <div class="heatmap-wrapper">
+                                    <div class="heatmap-y-labels">
+                                        <span>Mon</span>
+                                        <span>Wed</span>
+                                        <span>Fri</span>
+                                        <span>Sun</span>
+                                    </div>
+                                    <div class="heatmap-grid" id="heatmapGrid">
+                                        <!-- Generates 28 grid cells (4 weeks x 7 days) via app.js -->
+                                    </div>
+                                </div>
+
+                                <div class="heatmap-legend">
+                                    <span>Less Consistent</span>
+                                    <div class="legend-scale">
+                                        <span class="legend-cell level-0" title="0 habits completed"></span>
+                                        <span class="legend-cell level-1" title="1 habit completed"></span>
+                                        <span class="legend-cell level-2" title="2 habits completed"></span>
+                                    </div>
+                                    <span>More Consistent</span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: Striver DSA Sheet -->
+                <section class="view-section" id="view-striver">
+                    <div class="card striver-card">
+                        <div class="col-header-row">
+                            <h2 class="section-title">Striver A2Z DSA Sheet</h2>
+                            <span class="question-tracker-badge" id="striverTrackerCount">0 / 455 Completed</span>
+                        </div>
+                        <p class="section-desc">Browse chapters, check off problems, watch explanations, and log problems to your spaced repetition scheduler.</p>
+                        
+                        <div class="search-box">
+                            <input type="text" id="striverSearchInput" class="form-control search-input" placeholder="Search problems, topics or sub-steps...">
+                        </div>
+
+                        <div class="striver-steps-accordion" id="striverAccordion">
+                            <!-- Populated dynamically from striver_data.js via app.js -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- VIEW: Settings -->
+                <section class="view-section" id="view-settings">
+                    <div class="settings-layout">
+
+                        <!-- Cloud Sync Card -->
+                        <div class="card settings-card">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                                <h2 class="settings-title">Cloud Storage (Supabase)</h2>
+                                <span class="cloud-status-badge cloud-status-offline" id="cloudStatusBadge">
+                                    <span style="width:8px;height:8px;border-radius:50%;background-color:currentColor;display:inline-block;"></span>
+                                    <span id="cloudStatusText">Initializing…</span>
+                                </span>
+                            </div>
+                            <p class="settings-desc">Sign in with Google to sync your revision schedule, habits, and Striver progress across devices. All data is stored securely in the cloud.</p>
+
+                            <!-- Auth Panel: shown when NOT signed in -->
+                            <div id="cloudAuthPanel" style="padding:16px 0; text-align:center; border-top:1px solid var(--border-color);">
+                                <button class="btn-google" onclick="window.signInWithGoogle()">
+                                    <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
+                                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+                                    </svg>
+                                    <span>Sign In with Google</span>
+                                </button>
+                            </div>
+
+                            <!-- Ops Panel: shown when signed in -->
+                            <div id="cloudOpsPanel" style="display:none; padding:12px 0;">
+                                <div style="margin-bottom:12px;">
+                                    <h3 class="setting-item-title">Connected Account</h3>
+                                    <p class="setting-item-desc" id="cloudUserEmail" style="color:var(--color-success, #10b981); font-weight:500;"></p>
+                                    <p class="setting-item-desc" style="margin-top:4px;">✓ Cloud sync is active. Every action is auto-saved to Supabase.</p>
+                                </div>
+                                <div class="settings-actions" style="flex-wrap:wrap; gap:8px;">
+                                    <button class="btn btn-secondary" id="btnPushCloud">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path></svg>
+                                        Push to Cloud
+                                    </button>
+                                    <button class="btn btn-secondary" id="btnPullCloud">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none"><polyline points="8 17 12 21 16 17"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path></svg>
+                                        Pull from Cloud
+                                    </button>
+                                    <button class="btn btn-danger" onclick="window.signOutUser()">Sign Out</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Import / Export Card -->
+                        <div class="card settings-card">
+                            <h2 class="settings-title">Storage &amp; Backup</h2>
+                            <p class="settings-desc">Keep your spaced repetition schedule and habit history safe by importing/exporting or utilizing sync features.</p>
+                            
+                            <div class="settings-row">
+                                <div class="settings-info">
+                                    <h3 class="setting-item-title">Import / Export Database</h3>
+                                    <p class="setting-item-desc">Manually backup your data as a JSON file or restore from a previous export.</p>
+                                </div>
+                                <div class="settings-actions">
+                                    <button class="btn btn-secondary" id="btnExportData">Export Database</button>
+                                    <label class="btn btn-secondary file-upload-label" style="display:inline-block; cursor:pointer;">
+                                        Import Database
+                                        <input type="file" id="importFileSelector" style="display:none;" accept=".json">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="settings-row">
+                                <div class="settings-info">
+                                    <h3 class="setting-item-title">Clear All Local Data</h3>
+                                    <p class="setting-item-desc">Resets all study records, Streaks, and daily habit logs to start fresh.</p>
+                                </div>
+                                <div class="settings-actions">
+                                    <button class="btn btn-danger" id="btnClearDatabase">Reset App State</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Weekly Gym Schedule Presets Card -->
+                        <div class="card settings-card">
+                            <h2 class="settings-title">Weekly Gym Schedule</h2>
+                            <p class="settings-desc">Preset your daily muscle groups and workout times. When you open the Gym Tracker, today's preset will automatically fill in if current fields are empty.</p>
+                            
+                            <div class="schedule-table">
+                                <div class="schedule-row" data-day="1" id="scheduleRowMon">
+                                    <span class="schedule-day-label">Monday</span>
+                                    <select class="form-control schedule-muscle" id="scheduleMuscleMon">
+                                        <option value="">-- No Preset --</option>
+                                        <option value="Push">Push (Chest/Shoulders/Triceps)</option>
+                                        <option value="Pull">Pull (Back/Biceps)</option>
+                                        <option value="Legs">Legs / Core</option>
+                                        <option value="Cardio">Cardio / Endurance</option>
+                                        <option value="Rest">Rest / Recovery</option>
+                                    </select>
+                                    <input type="time" class="form-control schedule-time" id="scheduleTimeMon">
+                                </div>
+                                <div class="schedule-row" data-day="2" id="scheduleRowTue">
+                                    <span class="schedule-day-label">Tuesday</span>
+                                    <select class="form-control schedule-muscle" id="scheduleMuscleTue">
+                                        <option value="">-- No Preset --</option>
+                                        <option value="Push">Push (Chest/Shoulders/Triceps)</option>
+                                        <option value="Pull">Pull (Back/Biceps)</option>
+                                        <option value="Legs">Legs / Core</option>
+                                        <option value="Cardio">Cardio / Endurance</option>
+                                        <option value="Rest">Rest / Recovery</option>
+                                    </select>
+                                    <input type="time" class="form-control schedule-time" id="scheduleTimeTue">
+                                </div>
+                                <div class="schedule-row" data-day="3" id="scheduleRowWed">
+                                    <span class="schedule-day-label">Wednesday</span>
+                                    <select class="form-control schedule-muscle" id="scheduleMuscleWed">
+                                        <option value="">-- No Preset --</option>
+                                        <option value="Push">Push (Chest/Shoulders/Triceps)</option>
+                                        <option value="Pull">Pull (Back/Biceps)</option>
+                                        <option value="Legs">Legs / Core</option>
+                                        <option value="Cardio">Cardio / Endurance</option>
+                                        <option value="Rest">Rest / Recovery</option>
+                                    </select>
+                                    <input type="time" class="form-control schedule-time" id="scheduleTimeWed">
+                                </div>
+                                <div class="schedule-row" data-day="4" id="scheduleRowThu">
+                                    <span class="schedule-day-label">Thursday</span>
+                                    <select class="form-control schedule-muscle" id="scheduleMuscleThu">
+                                        <option value="">-- No Preset --</option>
+                                        <option value="Push">Push (Chest/Shoulders/Triceps)</option>
+                                        <option value="Pull">Pull (Back/Biceps)</option>
+                                        <option value="Legs">Legs / Core</option>
+                                        <option value="Cardio">Cardio / Endurance</option>
+                                        <option value="Rest">Rest / Recovery</option>
+                                    </select>
+                                    <input type="time" class="form-control schedule-time" id="scheduleTimeThu">
+                                </div>
+                                <div class="schedule-row" data-day="5" id="scheduleRowFri">
+                                    <span class="schedule-day-label">Friday</span>
+                                    <select class="form-control schedule-muscle" id="scheduleMuscleFri">
+                                        <option value="">-- No Preset --</option>
+                                        <option value="Push">Push (Chest/Shoulders/Triceps)</option>
+                                        <option value="Pull">Pull (Back/Biceps)</option>
+                                        <option value="Legs">Legs / Core</option>
+                                        <option value="Cardio">Cardio / Endurance</option>
+                                        <option value="Rest">Rest / Recovery</option>
+                                    </select>
+                                    <input type="time" class="form-control schedule-time" id="scheduleTimeFri">
+                                </div>
+                                <div class="schedule-row" data-day="6" id="scheduleRowSat">
+                                    <span class="schedule-day-label">Saturday</span>
+                                    <select class="form-control schedule-muscle" id="scheduleMuscleSat">
+                                        <option value="">-- No Preset --</option>
+                                        <option value="Push">Push (Chest/Shoulders/Triceps)</option>
+                                        <option value="Pull">Pull (Back/Biceps)</option>
+                                        <option value="Legs">Legs / Core</option>
+                                        <option value="Cardio">Cardio / Endurance</option>
+                                        <option value="Rest">Rest / Recovery</option>
+                                    </select>
+                                    <input type="time" class="form-control schedule-time" id="scheduleTimeSat">
+                                </div>
+                                <div class="schedule-row" data-day="0" id="scheduleRowSun">
+                                    <span class="schedule-day-label">Sunday</span>
+                                    <select class="form-control schedule-muscle" id="scheduleMuscleSun">
+                                        <option value="">-- No Preset --</option>
+                                        <option value="Push">Push (Chest/Shoulders/Triceps)</option>
+                                        <option value="Pull">Pull (Back/Biceps)</option>
+                                        <option value="Legs">Legs / Core</option>
+                                        <option value="Cardio">Cardio / Endurance</option>
+                                        <option value="Rest">Rest / Recovery</option>
+                                    </select>
+                                    <input type="time" class="form-control schedule-time" id="scheduleTimeSun">
+                                </div>
+                            </div>
+                            
+                            <div style="margin-top: 20px;">
+                                <button class="btn btn-primary" id="btnSaveSchedule">Save Schedule</button>
+                            </div>
+                        </div>
+
+                        <!-- System Configuration -->
+                        <div class="card settings-card mt-6">
+                            <h2 class="settings-title">System Status</h2>
+                            <div class="system-status-list">
+                                <div class="status-item">
+                                    <span>Active Workspace</span>
+                                    <span class="status-value font-mono">e:\Coding\Interval_2.0</span>
+                                </div>
+                                <div class="status-item">
+                                    <span>Storage Backend</span>
+                                    <span class="status-value status-badge badge-green">Supabase Cloud</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Quick Add Custom Topic Modal -->
+    <div class="modal-backdrop" id="modalQuickAdd">
+        <div class="modal card">
+            <div class="modal-header">
+                <h3 class="modal-title">Create Revision Card</h3>
+                <button class="btn-close-modal" id="btnCancelQuickAdd">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="modalTopicTitle" class="form-label">Topic / Question Title *</label>
+                    <input type="text" id="modalTopicTitle" class="form-control" placeholder="e.g. Reverse Linked List, CSS Grid Centering...">
+                </div>
+                <div class="form-group mt-4">
+                    <label for="modalTopicCategory" class="form-label">Subject / Category</label>
+                    <input type="text" id="modalTopicCategory" class="form-control" placeholder="e.g. Data Structures, CSS, Javascript" list="modal-categories-list">
+                    <datalist id="modal-categories-list">
+                        <option value="Data Structures"></option>
+                        <option value="Algorithms"></option>
+                        <option value="CSS"></option>
+                        <option value="Javascript"></option>
+                        <option value="General"></option>
+                    </datalist>
+                </div>
+                <div class="form-group mt-4">
+                    <label class="form-label">Difficulty / Understanding Level</label>
+                    <div class="difficulty-level-select">
+                        <label class="diff-btn-label">
+                            <input type="radio" name="modalDifficulty" value="low" checked>
+                            <span class="diff-btn-visual diff-visual-low">Easy</span>
+                        </label>
+                        <label class="diff-btn-label">
+                            <input type="radio" name="modalDifficulty" value="medium">
+                            <span class="diff-btn-visual diff-visual-medium">Medium</span>
+                        </label>
+                        <label class="diff-btn-label">
+                            <input type="radio" name="modalDifficulty" value="high">
+                            <span class="diff-btn-visual diff-visual-high">Hard</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group mt-4">
+                    <label for="modalTopicNotes" class="form-label">Key Recall Notes</label>
+                    <textarea id="modalTopicNotes" class="form-control" rows="3" placeholder="Key details or questions you need to recall next time."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelQuickAdd2">Cancel</button>
+                <button class="btn btn-primary" id="btnSaveQuickAdd">Log & Schedule</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script type="module" src="js/main.js"></script>
+    <script>
+        // Theme toggle logic
+        (function() {
+            var btn = document.getElementById('btnThemeToggle');
+            if (!btn) return;
+            btn.addEventListener('click', function() {
+                var html = document.documentElement;
+                var isLight = html.getAttribute('data-theme') === 'light';
+                if (isLight) {
+                    html.removeAttribute('data-theme');
+                    localStorage.setItem('interval-theme', 'dark');
+                } else {
+                    html.setAttribute('data-theme', 'light');
+                    localStorage.setItem('interval-theme', 'light');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

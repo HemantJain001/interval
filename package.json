@@ -1,0 +1,25 @@
+{
+  "name": "interval-spaced-repetition",
+  "version": "1.0.0",
+  "description": "Spaced repetition revision tracker web application.",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite --port 5175",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "spaced-repetition",
+    "learning",
+    "revision",
+    "study"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "vite": "^5.2.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.108.2"
+  }
+}
